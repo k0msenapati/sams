@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}My Attendance - {{ student.roll_number }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-1">Welcome, {{ student.user.get_full_name|default:student.user.username }}</h2>
+            <p class="text-muted mb-4">
+                Roll No: <strong>{{ student.roll_number }}</strong> | 
+                Section: <strong>{{ student.section }}</strong> | 
+                Semester: <strong>{{ student.current_semester }}</strong>
+            </p>
+        </div>
+    </div>
+
+    <!-- Overall Summary Card -->
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <div class="card text-center {% if overall_eligible %}border-success{% else %}border-danger{% endif %}">
+                <div class="card-body">
+                    <h1 class="display-4 fw-bold">{{ overall_percentage }}%</h1>
+                    <h5>Overall Attendance</h5>
+                    {% if overall_eligible %}
+                        <span class="badge bg-success fs-5 px-4 py-2">ELIGIBLE TO APPEAR IN EXAMS</span>
+                    {% else %}
+                        <span class="badge bg-danger fs-5 px-4 py-2">NOT ELIGIBLE - Below 75%</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Info</h5>
+                    <p><strong>Current Academic Year:</strong> {{ current_year }}</p>
+                    <p><strong>Note:</strong> Maximum 30 classes per subject are considered for percentage calculation.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subject-wise Report -->
+    <h4 class="mb-3">Subject-wise Attendance Details</h4>
+    
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Course Code</th>
+                    <th>Course Name</th>
+                    <th>Total Classes</th>
+                    <th>Effective (max 30)</th>
+                    <th>Present</th>
+                    <th>Percentage</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in report %}
+                <tr>
+                    <td><strong>{{ item.course_code }}</strong></td>
+                    <td>{{ item.course_name }}</td>
+                    <td>{{ item.total_classes }}</td>
+                    <td><strong>{{ item.effective_total }}</strong></td>
+                    <td>{{ item.present }}</td>
+                    <td class="fw-bold">{{ item.percentage }}%</td>
+                    <td>
+                        {% if item.eligible %}
+                            <span class="badge bg-success">ELIGIBLE</span>
+                        {% else %}
+                            <span class="badge bg-danger">NOT ELIGIBLE</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if not report %}
+        <div class="alert alert-warning text-center">
+            No attendance records found yet.
+        </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{% url 'home' %}" class="btn btn-secondary">Back to Home</a>
+    </div>
+</div>
+{% endblock %}

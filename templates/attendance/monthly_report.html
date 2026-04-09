@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Monthly Attendance Report - {{ student.roll_number }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Attendance Report - {{ student.roll_number }} ({{ student.user.get_full_name }})</h2>
+    <p class="text-muted">Section: {{ student.section }} | Semester: {{ student.current_semester }}</p>
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Course Code</th>
+                    <th>Course Name</th>
+                    <th>Total Classes Held</th>
+                    <th>Effective Classes (max 30)</th>
+                    <th>Present</th>
+                    <th>Percentage</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in report %}
+                <tr>
+                    <td><strong>{{ item.course_code }}</strong></td>
+                    <td>{{ item.course_name }}</td>
+                    <td>{{ item.total_classes }}</td>
+                    <td>{{ item.effective_total }}</td>
+                    <td>{{ item.present }}</td>
+                    <td>
+                        <strong>{{ item.percentage }}%</strong>
+                    </td>
+                    <td>
+                        {% if item.eligible %}
+                            <span class="badge bg-success fs-6">ELIGIBLE</span>
+                        {% else %}
+                            <span class="badge bg-danger fs-6">NOT ELIGIBLE</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-4 alert alert-info">
+        <strong>Note:</strong> If total classes > 30 in a subject, only 30 are considered for percentage calculation as per university rule.
+    </div>
+
+    {% if is_professor %}
+    <a href="{% url 'professor_dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+    {% else %}
+    <a href="{% url 'home' %}" class="btn btn-secondary">Back to Home</a>
+    {% endif %}
+</div>
+{% endblock %}

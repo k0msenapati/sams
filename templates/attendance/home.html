@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}OUTR SAMS - Home{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h1 class="display-5 mt-5">Welcome to OUTR Attendance System</h1>
+            <p class="lead mt-3">Automated Student Attendance Management</p>
+            
+            {% if message %}
+                <div class="alert alert-info mt-4">{{ message }}</div>
+            {% endif %}
+            
+            <div class="mt-5">
+                <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Login to Continue</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
