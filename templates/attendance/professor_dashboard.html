@@ -3,54 +3,77 @@
 {% block title %}Professor Dashboard - OUTR SAMS{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h2 class="mb-4">Welcome, Prof. {{ professor.user.get_full_name|default:professor.user.username }}</h2>
-    
-    <div class="alert alert-info">
-        Department: <strong>{{ professor.department.name }}</strong> ({{ professor.department.code }})
+<div class="container py-4" style="max-width: 1100px;">
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h4 class="fw-bold mb-1">
+            Prof. {{ professor.user.get_full_name|default:professor.user.username }}
+        </h4>
+        <p class="text-muted small mb-0">
+            {{ professor.department.name }} ({{ professor.department.code }})
+        </p>
     </div>
 
-    <h4 class="mt-4 mb-3">Today's Classes</h4>
-    
+    <!-- Section Title -->
+    <h6 class="text-uppercase text-muted fw-semibold mb-3">
+        Today's Classes
+    </h6>
+
     {% if courses %}
-        <div class="row">
-            {% for course in courses %}
-            <div class="col-md-6 mb-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ course.code }} - {{ course.name }}</h5>
-                        <p class="card-text">
-                            Semester {{ course.semester }} • {{ course.credits }} Credits
-                        </p>
-                        
-                        {% for section in professor.department.sections.all %}
-                            {% if section.semester == course.semester %}
-                            <div class="mt-3">
-                                <a href="{% url 'take_attendance' course.id section.id %}" 
-                                   class="btn btn-primary btn-sm me-2">
-                                    Take Attendance - Section {{ section.name }}
-                                </a>
-                                
-                                <!-- Link to view all students' monthly report for this section -->
-                                <a href="{% url 'monthly_report' section.students.first.id %}" 
-                                   class="btn btn-outline-info btn-sm">
-                                    View Reports
-                                </a>
-                            </div>
-                            {% endif %}
-                        {% endfor %}
+    <div class="row g-3">
+        {% for course in courses %}
+        <div class="col-12 col-sm-6 col-lg-4">
+
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body p-3">
+
+                    <!-- Course Code -->
+                    <h6 class="fw-bold mb-1">
+                        {{ course.code }}
+                    </h6>
+
+                    <!-- Course Name -->
+                    <p class="text-muted small mb-2">
+                        {{ course.name }}
+                    </p>
+
+                    <!-- Meta -->
+                    <p class="small text-secondary mb-3">
+                        Semester {{ course.semester }} • {{ course.credits }} Credits
+                    </p>
+
+                    {% for section in professor.department.sections.all %}
+                    {% if section.semester == course.semester %}
+
+                    <!-- Actions -->
+                    <div class="d-flex gap-2">
+
+                        <a href="{% url 'take_attendance' course.id section.id %}" class="btn btn-sm btn-primary px-3">
+                            Take
+                        </a>
+
+                        <a href="{% url 'monthly_report' section.students.first.id %}"
+                            class="btn btn-sm btn-outline-secondary px-3">
+                            Reports
+                        </a>
+
                     </div>
+
+                    {% endif %}
+                    {% endfor %}
+
                 </div>
             </div>
-            {% endfor %}
+
         </div>
+        {% endfor %}
+    </div>
     {% else %}
-        <div class="alert alert-warning">
-            No courses found in your department.
-        </div>
+    <div class="alert alert-warning small">
+        No courses found.
+    </div>
     {% endif %}
 
-    <hr class="my-5">
-    <a href="{% url 'home' %}" class="btn btn-secondary">Back to Home</a>
 </div>
 {% endblock %}

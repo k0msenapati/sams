@@ -3,74 +3,70 @@
 {% block title %}My Attendance - {{ student.roll_number }}{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row">
-        <div class="col-md-12">
-            <h2 class="mb-1">Welcome, {{ student.user.get_full_name|default:student.user.username }}</h2>
-            <p class="text-muted mb-4">
-                Roll No: <strong>{{ student.roll_number }}</strong> | 
-                Section: <strong>{{ student.section }}</strong> | 
-                Semester: <strong>{{ student.current_semester }}</strong>
-            </p>
-        </div>
+<div class="container py-4" style="max-width: 900px;">
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h5 class="fw-bold mb-1">
+            {{ student.user.get_full_name|default:student.user.username }}
+        </h5>
+        <p class="text-muted small mb-0">
+            Roll: <strong>{{ student.roll_number }}</strong>
+            <span class="mx-1">•</span>
+            Sec: <strong>{{ student.section }}</strong>
+        </p>
     </div>
 
-    <!-- Overall Summary Card -->
-    <div class="row mb-5">
-        <div class="col-md-6">
-            <div class="card text-center {% if overall_eligible %}border-success{% else %}border-danger{% endif %}">
-                <div class="card-body">
-                    <h1 class="display-4 fw-bold">{{ overall_percentage }}%</h1>
-                    <h5>Overall Attendance</h5>
-                    {% if overall_eligible %}
-                        <span class="badge bg-success fs-5 px-4 py-2">ELIGIBLE TO APPEAR IN EXAMS</span>
-                    {% else %}
-                        <span class="badge bg-danger fs-5 px-4 py-2">NOT ELIGIBLE - Below 75%</span>
-                    {% endif %}
-                </div>
-            </div>
+    <!-- Overall -->
+    <div class="bg-light rounded px-3 py-2 mb-4 d-flex justify-content-between align-items-center">
+
+        <span class="text-muted small fw-semibold">
+            Overall Attendance
+        </span>
+
+        <div class="d-flex align-items-center gap-2">
+            <span class="fs-5 fw-bold">{{ overall_percentage }}%</span>
+
+            {% if overall_eligible %}
+            <span class="badge bg-success-subtle text-success">Eligible</span>
+            {% else %}
+            <span class="badge bg-danger-subtle text-danger">Low</span>
+            {% endif %}
         </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Quick Info</h5>
-                    <p><strong>Current Academic Year:</strong> {{ current_year }}</p>
-                    <p><strong>Note:</strong> Maximum 30 classes per subject are considered for percentage calculation.</p>
-                </div>
-            </div>
-        </div>
+
     </div>
 
-    <!-- Subject-wise Report -->
-    <h4 class="mb-3">Subject-wise Attendance Details</h4>
-    
-    <div class="table-responsive">
-        <table class="table table-bordered table-hover align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>Course Code</th>
-                    <th>Course Name</th>
-                    <th>Total Classes</th>
-                    <th>Effective (max 30)</th>
-                    <th>Present</th>
-                    <th>Percentage</th>
+    <!-- Section Title -->
+    <h6 class="text-uppercase text-muted fw-semibold mb-3">
+        Attendance Details
+    </h6>
+
+    <!-- Desktop Table -->
+    <div class="table-responsive d-none d-md-block">
+        <table class="table align-middle">
+            <thead class="table-light">
+                <tr class="text-muted small">
+                    <th>Code</th>
+                    <th>Subject</th>
+                    <th>Held</th>
+                    <th>Attended</th>
+                    <th>%</th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in report %}
                 <tr>
-                    <td><strong>{{ item.course_code }}</strong></td>
+                    <td class="fw-semibold">{{ item.course_code }}</td>
                     <td>{{ item.course_name }}</td>
                     <td>{{ item.total_classes }}</td>
-                    <td><strong>{{ item.effective_total }}</strong></td>
                     <td>{{ item.present }}</td>
-                    <td class="fw-bold">{{ item.percentage }}%</td>
+                    <td class="fw-semibold">{{ item.percentage }}%</td>
                     <td>
                         {% if item.eligible %}
-                            <span class="badge bg-success">ELIGIBLE</span>
+                        <span class="badge bg-success-subtle text-success">OK</span>
                         {% else %}
-                            <span class="badge bg-danger">NOT ELIGIBLE</span>
+                        <span class="badge bg-danger-subtle text-danger">Low</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -79,14 +75,39 @@
         </table>
     </div>
 
-    {% if not report %}
-        <div class="alert alert-warning text-center">
-            No attendance records found yet.
+    <!-- Mobile Cards -->
+    <div class="d-md-none">
+        {% for item in report %}
+        <div class="card mb-2 shadow-sm border-0">
+            <div class="card-body py-3">
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="fw-semibold mb-0">{{ item.course_code }}</h6>
+                    <span class="fw-bold">{{ item.percentage }}%</span>
+                </div>
+
+                <p class="text-muted small mb-2">{{ item.course_name }}</p>
+
+                <p class="small text-secondary mb-2">
+                    {{ item.present }}/{{ item.total_classes }} classes
+                </p>
+
+                {% if item.eligible %}
+                <span class="badge bg-success-subtle text-success">Eligible</span>
+                {% else %}
+                <span class="badge bg-danger-subtle text-danger">Low</span>
+                {% endif %}
+
+            </div>
         </div>
+        {% endfor %}
+    </div>
+
+    {% if not report %}
+    <div class="alert alert-warning text-center small">
+        No attendance records found yet.
+    </div>
     {% endif %}
 
-    <div class="mt-4">
-        <a href="{% url 'home' %}" class="btn btn-secondary">Back to Home</a>
-    </div>
 </div>
 {% endblock %}
