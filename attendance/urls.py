@@ -15,5 +15,5 @@ urlpatterns = [
         name="monthly_report",
     ),
     path("report/monthly/", views.monthly_attendance_report, name="my_monthly_report"),
-    path('student/dashboard/', views.student_dashboard, name='student_dashboard'),
+    path("student/dashboard/", views.student_dashboard, name="student_dashboard"),
 ]
