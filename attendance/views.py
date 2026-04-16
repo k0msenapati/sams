@@ -73,18 +73,17 @@ def take_attendance(request, course_id, section_id):
         messages.success(request, f"Attendance for {course.code} saved successfully!")
         return redirect("professor_dashboard")
 
-    # Get existing attendance if any
-    existing = {
-        att.student_id: att.is_present  # type: ignore
-        for att in Attendance.objects.filter(lecture=lecture)
-    }
+    existing_present_ids = [
+        att.student_id  # type: ignore
+        for att in Attendance.objects.filter(lecture=lecture, is_present=True)
+    ]
 
     context = {
         "course": course,
         "section": section,
         "students": students,
         "lecture": lecture,
-        "existing": existing,
+        "existing_present_ids": existing_present_ids,
         "today": today,
     }
     return render(request, "attendance/take_attendance.html", context)
