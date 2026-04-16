@@ -7,7 +7,7 @@
 
     <!-- Header -->
     <div class="mb-4">
-        <h5 class="fw-bold mb-1">
+        <h5 class="fw-bold mb-1 text-primary">
             {{ student.user.get_full_name|default:student.user.username }}
         </h5>
         <p class="text-muted small mb-0">
@@ -20,12 +20,12 @@
     <!-- Overall -->
     <div class="bg-light rounded px-3 py-2 mb-4 d-flex justify-content-between align-items-center">
 
-        <span class="text-muted small fw-semibold">
+        <span class="small fw-semibold text-muted">
             Overall Attendance
         </span>
 
         <div class="d-flex align-items-center gap-2">
-            <span class="fs-5 fw-bold">{{ overall_percentage }}%</span>
+            <span class="fs-5 fw-bold text-primary">{{ overall_percentage }}%</span>
 
             {% if overall_eligible %}
             <span class="badge bg-success-subtle text-success">Eligible</span>
@@ -37,13 +37,13 @@
     </div>
 
     <!-- Section Title -->
-    <h6 class="text-uppercase text-muted fw-semibold mb-3">
+    <h6 class="text-uppercase text-muted fw-semibold mb-3 border-start border-3 border-primary ps-2">
         Attendance Details
     </h6>
 
     <!-- Desktop Table -->
     <div class="table-responsive d-none d-md-block">
-        <table class="table align-middle">
+        <table class="table align-middle table-hover table-sm">
             <thead class="table-light">
                 <tr class="text-muted small">
                     <th>Code</th>
@@ -57,16 +57,16 @@
             <tbody>
                 {% for item in report %}
                 <tr>
-                    <td class="fw-semibold">{{ item.course_code }}</td>
+                    <td>{{ item.course_code }}</td>
                     <td>{{ item.course_name }}</td>
                     <td>{{ item.total_classes }}</td>
                     <td>{{ item.present }}</td>
-                    <td class="fw-semibold">{{ item.percentage }}%</td>
+                    <td class="fw-semibold text-primary">{{ item.percentage }}%</td>
                     <td>
                         {% if item.eligible %}
-                        <span class="badge bg-success-subtle text-success">OK</span>
+                        <span class="badge bg-success-subtle text-success">ELIGIBLE</span>
                         {% else %}
-                        <span class="badge bg-danger-subtle text-danger">Low</span>
+                        <span class="badge bg-danger-subtle text-danger">NOT ELIGIBLE</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -83,7 +83,7 @@
 
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="fw-semibold mb-0">{{ item.course_code }}</h6>
-                    <span class="fw-bold">{{ item.percentage }}%</span>
+                    <span class="fw-bold text-primary">{{ item.percentage }}%</span>
                 </div>
 
                 <p class="text-muted small mb-2">{{ item.course_name }}</p>
@@ -93,9 +93,9 @@
                 </p>
 
                 {% if item.eligible %}
-                <span class="badge bg-success-subtle text-success">Eligible</span>
+                <span class="badge bg-success-subtle text-success">ELIGIBLE</span>
                 {% else %}
-                <span class="badge bg-danger-subtle text-danger">Low</span>
+                <span class="badge bg-danger-subtle text-danger">NOT ELIGIBLE</span>
                 {% endif %}
 
             </div>

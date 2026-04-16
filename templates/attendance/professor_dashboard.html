@@ -53,9 +53,8 @@
                             Take
                         </a>
 
-                        <a href="{% url 'monthly_report' section.students.first.id %}"
-                            class="btn btn-sm btn-outline-secondary px-3">
-                            Reports
+                        <a href="{% url 'section_report' course.id section.id %}" class="btn btn-outline-info btn-sm">
+                            View Class Report
                         </a>
 
                     </div>
