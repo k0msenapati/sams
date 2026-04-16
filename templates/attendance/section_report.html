@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Class Report - {{ course.code }} {{ section }}{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 900px;">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+
+        <!-- Left: Title -->
+        <div>
+            <h5 class="fw-bold mb-1 text-primary">
+                {{ course.code }} - {{ course.name }}
+            </h5>
+            <p class="text-muted small mb-0">
+                Section <strong>{{ section.name }}</strong>
+                <span class="mx-1">•</span>
+                Semester <strong>{{ section.semester }}</strong>
+            </p>
+        </div>
+
+        <!-- Right: Button -->
+        <button onclick="downloadPDF()" class="btn btn-sm btn-primary">
+            Download PDF
+        </button>
+
+    </div>
+
+    <p class="small mb-4">
+        Total: <strong class="text-primary">{{ total_lectures }}</strong>
+        <span class="mx-1 text-muted">•</span>
+        Effective: <strong class="text-success">{{ effective_lectures }}</strong>
+        <span class="text-muted">(max 30)</span>
+    </p>
+
+    <!-- Section Title -->
+    <h6 class="text-uppercase text-muted fw-semibold mb-3 border-start border-3 border-primary ps-2">
+        Student Attendance
+    </h6>
+
+    <!-- Desktop Table -->
+    <div class="table-responsive d-none d-md-block">
+        <table class="table align-middle table-sm table-hover">
+            <thead class="table-light">
+                <tr class="text-muted small">
+                    <th>Roll</th>
+                    <th>Name</th>
+                    <th>Present</th>
+                    <th>%</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for data in report_data %}
+                <tr>
+                    <td class="fw-semibold">{{ data.student.roll_number }}</td>
+                    <td>{{ data.student.user.get_full_name|default:data.student.user.username }}</td>
+                    <td>{{ data.present }}</td>
+                    <td class="fw-semibold text-primary">{{ data.percentage }}%</td>
+                    <td>
+                        {% if data.eligible %}
+                        <span class="badge bg-success-subtle text-success">ELIGIBLE</span>
+                        {% else %}
+                        <span class="badge bg-danger-subtle text-danger">NOT ELIGIBLE</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Mobile Cards -->
+    <div class="d-md-none">
+        {% for data in report_data %}
+        <div class="card mb-2 shadow-sm border-0">
+            <div class="card-body py-3">
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="fw-semibold mb-0">{{ data.student.roll_number }}</h6>
+                    <span class="fw-bold text-primary">{{ data.percentage }}%</span>
+                </div>
+
+                <p class="text-muted small mb-2">
+                    {{ data.student.user.get_full_name|default:data.student.user.username }}
+                </p>
+
+                <p class="small text-secondary mb-2">
+                    Present: {{ data.present }}
+                </p>
+
+                {% if data.eligible %}
+                <span class="badge bg-success-subtle text-success">ELIGIBLE</span>
+                {% else %}
+                <span class="badge bg-danger-subtle text-danger">NOT ELIGIBLE</span>
+                {% endif %}
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not report_data %}
+    <div class="alert alert-warning text-center small">
+        No records found yet.
+    </div>
+    {% endif %}
+
+    <!-- Back -->
+    <div class="mt-3">
+        <a href="{% url 'professor_dashboard' %}" class="btn btn-light btn-sm">
+            ← Back
+        </a>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script>
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Title
+        doc.setFontSize(14);
+        doc.text("{{ course.code }} - {{ course.name }}", 14, 15);
+
+        doc.setFontSize(10);
+        doc.text("Section: {{ section.name }} | Semester: {{ section.semester }}", 14, 22);
+
+        // Summary
+        doc.text(
+            "Total: {{ total_lectures }} | Effective: {{ effective_lectures }} (max 30)",
+            14,
+            30
+        );
+
+        // Table data
+        const rows = [
+            {% for data in report_data %}
+    [
+        "{{ data.student.roll_number }}",
+        "{{ data.student.user.get_full_name|default:data.student.user.username }}",
+        "{{ data.present }}",
+        "{{ data.percentage }}%",
+        "{{ data.eligible|yesno:'ELIGIBLE,NOT ELIGIBLE' }}"
+    ],
+        {% endfor %}
+    ];
+
+    // Table
+    doc.autoTable({
+        startY: 35,
+        head: [['Roll', 'Name', 'Present', '%', 'Status']],
+        body: rows,
+        theme: 'grid',
+        styles: { fontSize: 9 }
+    });
+
+    // Save
+    doc.save("class_report.pdf");
+}
+</script>
+{% endblock %}

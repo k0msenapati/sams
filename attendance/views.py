@@ -13,15 +13,11 @@ def home(request):
     if request.user.role == "professor":
         return redirect("professor_dashboard")
     elif request.user.role == "student":
-        try:
-            return redirect("student_dashboard")
-        except Student.DoesNotExist:
-            messages.error(request, "Student profile not found.")
-            return redirect("login")
+        return redirect("student_dashboard")
     elif request.user.role == "admin":
         return redirect("/admin/")
 
-    return render(request, "attendance/home.html")
+    return redirect("login")
 
 
 @login_required
@@ -79,7 +75,7 @@ def take_attendance(request, course_id, section_id):
 
     # Get existing attendance if any
     existing = {
-        att.student_id: att.is_present # type: ignore
+        att.student_id: att.is_present  # type: ignore
         for att in Attendance.objects.filter(lecture=lecture)
     }
 
@@ -95,92 +91,65 @@ def take_attendance(request, course_id, section_id):
 
 
 @login_required
-def monthly_attendance_report(request, student_id=None):
-    """Monthly + Cumulative Attendance Report"""
+def section_attendance_report(request, course_id, section_id):
+    if request.user.role != "professor":
+        messages.error(request, "Only professors can access this.")
+        return redirect("professor_dashboard")
 
-    if request.user.role == "student":
-        try:
-            student = Student.objects.get(user=request.user)
-        except Student.DoesNotExist:
-            messages.error(request, "Student profile not found.")
-            return redirect("home")
-    else:
-        # Professor or Admin can view any student
-        student = get_object_or_404(Student, id=student_id) if student_id else None
+    professor = get_object_or_404(Professor, user=request.user)
+    course = get_object_or_404(Course, id=course_id)
+    section = get_object_or_404(Section, id=section_id)
 
-    if not student:
-        messages.error(request, "No student selected.")
-        return redirect("home")
+    # Get all students in this section
+    students = Student.objects.filter(section=section).order_by("roll_number")
 
-    # Current month and year
     today = timezone.now().date()
     current_year = today.year
 
-    # Get all lectures for this student
-    attendances = Attendance.objects.filter(
-        student=student, lecture__date__year=current_year
-    ).select_related("lecture__course", "lecture__section")
+    report_data = []
 
-    # Group by Course + Month
-    from collections import defaultdict
+    for student in students:
+        # Get attendance for this student in this course
+        attendances = Attendance.objects.filter(
+            student=student, lecture__course=course, lecture__date__year=current_year
+        )
 
-    report = defaultdict(
-        lambda: {
-            "course_code": "",
-            "course_name": "",
-            "total_classes": 0,
-            "present": 0,
-            "percentage": 0,
-            "eligible": False,
-            "monthly": {},
-        }
-    )
+        total_classes = attendances.count()
+        present = attendances.filter(is_present=True).count()
 
-    for att in attendances:
-        course_key = att.lecture.course.id # type: ignore
-        month_key = att.lecture.date.strftime("%Y-%m")
-
-        if course_key not in report:
-            report[course_key]["course_code"] = att.lecture.course.code
-            report[course_key]["course_name"] = att.lecture.course.name
-
-        report[course_key]["total_classes"] += 1
-        if att.is_present:
-            report[course_key]["present"] += 1
-
-        # Monthly breakdown
-        if month_key not in report[course_key]["monthly"]:
-            report[course_key]["monthly"][month_key] = {"total": 0, "present": 0}
-
-        report[course_key]["monthly"][month_key]["total"] += 1
-        if att.is_present:
-            report[course_key]["monthly"][month_key]["present"] += 1
-
-    # Calculate percentages with 30-class cap
-    final_report = []
-    for course_data in report.values():
-        total = course_data["total_classes"]
-        present = course_data["present"]
-
-        # Apply cap: more than 30 classes considered as 30
-        effective_total = min(total, 30)
-        percentage = (present / effective_total * 100) if effective_total > 0 else 0
+        effective_total = min(total_classes, 30)
+        percentage = (
+            round((present / effective_total * 100), 2) if effective_total > 0 else 0
+        )
         eligible = percentage >= 75
 
-        course_data["effective_total"] = effective_total
-        course_data["percentage"] = round(percentage, 2)
-        course_data["eligible"] = eligible
+        report_data.append(
+            {
+                "student": student,
+                "total_classes": total_classes,
+                "present": present,
+                "effective_total": effective_total,
+                "percentage": percentage,
+                "eligible": eligible,
+            }
+        )
 
-        final_report.append(course_data)
+    # Overall section summary
+    total_lectures = Lecture.objects.filter(
+        course=course, section=section, date__year=current_year
+    ).count()
+    effective_lectures = min(total_lectures, 30)
 
     context = {
-        "student": student,
-        "report": final_report,
-        "current_month": today.strftime("%B %Y"),
-        "is_professor": request.user.role == "professor",
+        "course": course,
+        "section": section,
+        "report_data": report_data,
+        "total_lectures": total_lectures,
+        "effective_lectures": effective_lectures,
+        "professor": professor,
     }
 
-    return render(request, "attendance/monthly_report.html", context)
+    return render(request, "attendance/section_report.html", context)
 
 
 @login_required
@@ -216,7 +185,7 @@ def student_dashboard(request):
     )
 
     for att in attendances:
-        course_id = att.lecture.course.id # type: ignore
+        course_id = att.lecture.course.id  # type: ignore
         month_key = att.lecture.date.strftime("%Y-%m")
 
         if not report[course_id]["course_code"]:

@@ -10,10 +10,9 @@ urlpatterns = [
         name="take_attendance",
     ),
     path(
-        "report/monthly/<int:student_id>/",
-        views.monthly_attendance_report,
-        name="monthly_report",
+        "report/section/<int:course_id>/<int:section_id>/",
+        views.section_attendance_report,
+        name="section_report",
     ),
-    path("report/monthly/", views.monthly_attendance_report, name="my_monthly_report"),
     path("student/dashboard/", views.student_dashboard, name="student_dashboard"),
 ]
