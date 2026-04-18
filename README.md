@@ -84,9 +84,27 @@ uv run python manage.py migrate
 uv run python manage.py createsuperuser
 ```
 
-**Important:** After creating superuser:
-- Login to `/admin/`
-- Edit the superuser and **change Role to "admin"**
+***Important:*** Change Superuser Role to Admin
+
+After creating a superuser, open Django shell:
+
+```bash
+uv run python manage.py shell
+```
+
+Then run:
+
+```python
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+user = User.objects.get(username="superuser_username")
+user.role = "admin"
+user.save()
+
+print("Updated:", user.username, user.role)
+```
 
 ### 5. Create Sample Data (Recommended)
 
@@ -96,6 +114,13 @@ In Django Admin (`/admin/`), create in this order:
 3. Course
 4. Professor User + Professor Profile
 5. Student Users + Student Profiles (with section linked)
+   
+**Alternative (faster):**
+Use the script to auto-generate data:
+
+```bash
+uv run populate_dummy_data.py
+```
 
 ### 6. Run the Application
 
