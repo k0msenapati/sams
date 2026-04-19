@@ -104,6 +104,7 @@ user.role = "admin"
 user.save()
 
 print("Updated:", user.username, user.role)
+exit()
 ```
 
 ### 5. Create Sample Data (Recommended)
