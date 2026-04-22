@@ -50,8 +50,9 @@
                     <th>Subject</th>
                     <th>Held</th>
                     <th>Attended</th>
-                    <th>%</th>
+                    <th>% Calculation</th>
                     <th>Status</th>
+                    <th>Details</th>
                 </tr>
             </thead>
             <tbody>
@@ -61,13 +62,42 @@
                     <td>{{ item.course_name }}</td>
                     <td>{{ item.total_classes }}</td>
                     <td>{{ item.present }}</td>
-                    <td class="fw-semibold text-primary">{{ item.percentage }}%</td>
+                    <td>
+                        <div class="d-flex flex-column">
+                            <span class="fw-semibold text-primary">{{ item.percentage }}%</span>
+                            <span class="text-muted" style="font-size: 0.7rem;">
+                                ({{ item.present }} / {{ item.effective_total }}) × 100
+                            </span>
+                        </div>
+                    </td>
                     <td>
                         {% if item.eligible %}
                         <span class="badge bg-success-subtle text-success">ELIGIBLE</span>
                         {% else %}
                         <span class="badge bg-danger-subtle text-danger">NOT ELIGIBLE</span>
                         {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-link p-0 text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#monthly-{{ forloop.counter }}">
+                            View Monthly
+                        </button>
+                    </td>
+                </tr>
+                <tr class="collapse" id="monthly-{{ forloop.counter }}">
+                    <td colspan="7" class="bg-light p-0">
+                        <div class="px-3 py-2">
+                            <p class="small fw-bold mb-1 text-muted">Monthly Breakdown:</p>
+                            <div class="d-flex flex-wrap gap-3">
+                                {% for month in item.monthly_list %}
+                                <div class="bg-white border rounded p-2" style="min-width: 120px;">
+                                    <div class="small fw-bold">{{ month.month_name }}</div>
+                                    <div class="small text-muted">{{ month.present }}/{{ month.total }} ({{ month.percentage }}%)</div>
+                                </div>
+                                {% empty %}
+                                <div class="small text-muted italic">No monthly data available.</div>
+                                {% endfor %}
+                            </div>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -78,25 +108,42 @@
     <!-- Mobile Cards -->
     <div class="d-md-none">
         {% for item in report %}
-        <div class="card mb-2 shadow-sm border-0">
+        <div class="card mb-3 shadow-sm border-0">
             <div class="card-body py-3">
 
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between align-items-center mb-1">
                     <h6 class="fw-semibold mb-0">{{ item.course_code }}</h6>
                     <span class="fw-bold text-primary">{{ item.percentage }}%</span>
                 </div>
-
                 <p class="text-muted small mb-2">{{ item.course_name }}</p>
 
-                <p class="small text-secondary mb-2">
-                    {{ item.present }}/{{ item.total_classes }} classes
-                </p>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <p class="small text-secondary mb-0">
+                        {{ item.present }}/{{ item.total_classes }} classes
+                        <br>
+                        <span class="text-muted" style="font-size: 0.75rem;">Calc: ({{ item.present }}/{{ item.effective_total }})*100</span>
+                    </p>
+                    {% if item.eligible %}
+                    <span class="badge bg-success-subtle text-success">ELIGIBLE</span>
+                    {% else %}
+                    <span class="badge bg-danger-subtle text-danger">NOT ELIGIBLE</span>
+                    {% endif %}
+                </div>
 
-                {% if item.eligible %}
-                <span class="badge bg-success-subtle text-success">ELIGIBLE</span>
-                {% else %}
-                <span class="badge bg-danger-subtle text-danger">NOT ELIGIBLE</span>
-                {% endif %}
+                <button class="btn btn-sm btn-outline-secondary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#m-mobile-{{ forloop.counter }}">
+                    Monthly Details
+                </button>
+
+                <div class="collapse mt-2" id="m-mobile-{{ forloop.counter }}">
+                    <div class="pt-2 border-top">
+                        {% for month in item.monthly_list %}
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>{{ month.month_name }}</span>
+                            <span class="fw-semibold {% if month.eligible %}text-success{% else %}text-danger{% endif %}">{{ month.present }}/{{ month.total }} ({{ month.percentage }}%)</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
 
             </div>
         </div>

@@ -2,7 +2,6 @@ from django.db import models
 from core.models import User
 
 
-# ====================== UNIVERSITY STRUCTURE ======================
 class Department(models.Model):
     name = models.CharField(max_length=100)
     code = models.CharField(max_length=10, unique=True)

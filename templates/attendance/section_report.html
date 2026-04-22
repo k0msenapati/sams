@@ -27,16 +27,31 @@
 
     </div>
 
-    <p class="small mb-4">
-        Total: <strong class="text-primary">{{ total_lectures }}</strong>
-        <span class="mx-1 text-muted">•</span>
-        Effective: <strong class="text-success">{{ effective_lectures }}</strong>
-        <span class="text-muted">(max 30)</span>
-    </p>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <p class="small mb-0">
+                Total Classes: <strong class="text-primary">{{ total_lectures }}</strong>
+                <span class="mx-1 text-muted">•</span>
+                Effective Classes: <strong class="text-success">{{ effective_lectures }}</strong>
+                <span class="text-muted">(capped at 30 for %)</span>
+            </p>
+        </div>
+
+        <!-- Month Filter -->
+        <div class="d-flex align-items-center gap-2">
+            <label for="month-filter" class="small text-muted fw-semibold">Month:</label>
+            <select id="month-filter" class="form-select form-select-sm" style="width: auto;" onchange="window.location.href='?month=' + this.value">
+                <option value="">All (Yearly)</option>
+                {% for m in month_choices %}
+                <option value="{{ m }}" {% if m == current_month %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
 
     <!-- Section Title -->
     <h6 class="text-uppercase text-muted fw-semibold mb-3 border-start border-3 border-primary ps-2">
-        Student Attendance
+        Student Attendance {% if current_month %}({{ current_month }}){% endif %}
     </h6>
 
     <!-- Desktop Table -->
@@ -56,7 +71,7 @@
                 <tr>
                     <td class="fw-semibold">{{ data.student.roll_number }}</td>
                     <td>{{ data.student.user.get_full_name|default:data.student.user.username }}</td>
-                    <td>{{ data.present }}</td>
+                    <td>{{ data.present }} / {{ data.total_classes }}</td>
                     <td class="fw-semibold text-primary">{{ data.percentage }}%</td>
                     <td>
                         {% if data.eligible %}
@@ -86,15 +101,16 @@
                     {{ data.student.user.get_full_name|default:data.student.user.username }}
                 </p>
 
-                <p class="small text-secondary mb-2">
-                    Present: {{ data.present }}
-                </p>
-
-                {% if data.eligible %}
-                <span class="badge bg-success-subtle text-success">ELIGIBLE</span>
-                {% else %}
-                <span class="badge bg-danger-subtle text-danger">NOT ELIGIBLE</span>
-                {% endif %}
+                <div class="d-flex justify-content-between align-items-end">
+                    <div class="small text-secondary">
+                        Present: {{ data.present }} / {{ data.total_classes }}
+                    </div>
+                    {% if data.eligible %}
+                    <span class="badge bg-success-subtle text-success">ELIGIBLE</span>
+                    {% else %}
+                    <span class="badge bg-danger-subtle text-danger">NOT ELIGIBLE</span>
+                    {% endif %}
+                </div>
 
             </div>
         </div>
@@ -130,11 +146,12 @@
         doc.text("{{ course.code }} - {{ course.name }}", 14, 15);
 
         doc.setFontSize(10);
-        doc.text("Section: {{ section.name }} | Semester: {{ section.semester }}", 14, 22);
+        const filterStr = "{{ current_month|default:'Full Year' }}";
+        doc.text("Section: {{ section.name }} | Semester: {{ section.semester }} | Filter: " + filterStr, 14, 22);
 
         // Summary
         doc.text(
-            "Total: {{ total_lectures }} | Effective: {{ effective_lectures }} (max 30)",
+            "Total Classes: {{ total_lectures }} | Effective: {{ effective_lectures }} (max 30)",
             14,
             30
         );
@@ -145,7 +162,7 @@
     [
         "{{ data.student.roll_number }}",
         "{{ data.student.user.get_full_name|default:data.student.user.username }}",
-        "{{ data.present }}",
+        "{{ data.present }} / {{ data.total_classes }}",
         "{{ data.percentage }}%",
         "{{ data.eligible|yesno:'ELIGIBLE,NOT ELIGIBLE' }}"
     ],
@@ -155,7 +172,7 @@
     // Table
     doc.autoTable({
         startY: 35,
-        head: [['Roll', 'Name', 'Present', '%', 'Status']],
+        head: [['Roll', 'Name', 'Present / Held', '%', 'Status']],
         body: rows,
         theme: 'grid',
         styles: { fontSize: 9 }

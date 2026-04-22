@@ -99,23 +99,38 @@ def section_attendance_report(request, course_id, section_id):
     course = get_object_or_404(Course, id=course_id)
     section = get_object_or_404(Section, id=section_id)
 
+    # Monthly filtering
+    month_filter = request.GET.get("month")  # Expected format: YYYY-MM
+    
     # Get all students in this section
     students = Student.objects.filter(section=section).order_by("roll_number")
 
     today = timezone.now().date()
     current_year = today.year
 
+    # Get all months where lectures were held for this course/section
+    available_months = Lecture.objects.filter(
+        course=course, section=section
+    ).values_list("date", flat=True)
+    month_choices = sorted(list(set(d.strftime("%Y-%m") for d in available_months)), reverse=True)
+
     report_data = []
 
     for student in students:
-        # Get attendance for this student in this course
-        attendances = Attendance.objects.filter(
-            student=student, lecture__course=course, lecture__date__year=current_year
+        # Filter attendance by month if requested
+        attendance_qs = Attendance.objects.filter(
+            student=student, lecture__course=course
         )
+        if month_filter:
+            year, month = map(int, month_filter.split("-"))
+            attendance_qs = attendance_qs.filter(lecture__date__year=year, lecture__date__month=month)
+        else:
+            attendance_qs = attendance_qs.filter(lecture__date__year=current_year)
 
-        total_classes = attendances.count()
-        present = attendances.filter(is_present=True).count()
+        total_classes = attendance_qs.count()
+        present = attendance_qs.filter(is_present=True).count()
 
+        # CAP at 30 classes for percentage calculation as per objectives
         effective_total = min(total_classes, 30)
         percentage = (
             round((present / effective_total * 100), 2) if effective_total > 0 else 0
@@ -134,9 +149,14 @@ def section_attendance_report(request, course_id, section_id):
         )
 
     # Overall section summary
-    total_lectures = Lecture.objects.filter(
-        course=course, section=section, date__year=current_year
-    ).count()
+    lectures_qs = Lecture.objects.filter(course=course, section=section)
+    if month_filter:
+        year, month = map(int, month_filter.split("-"))
+        lectures_qs = lectures_qs.filter(date__year=year, date__month=month)
+    else:
+        lectures_qs = lectures_qs.filter(date__year=current_year)
+    
+    total_lectures = lectures_qs.count()
     effective_lectures = min(total_lectures, 30)
 
     context = {
@@ -146,6 +166,8 @@ def section_attendance_report(request, course_id, section_id):
         "total_lectures": total_lectures,
         "effective_lectures": effective_lectures,
         "professor": professor,
+        "month_choices": month_choices,
+        "current_month": month_filter,
     }
 
     return render(request, "attendance/section_report.html", context)
@@ -172,6 +194,7 @@ def student_dashboard(request):
     ).select_related("lecture__course")
 
     from collections import defaultdict
+    import calendar
 
     report = defaultdict(
         lambda: {
@@ -205,7 +228,7 @@ def student_dashboard(request):
     overall_present = 0
     overall_total = 0
 
-    for data in report.values():
+    for course_id, data in report.items():
         total = data["total_classes"]
         present = data["present"]
 
@@ -218,7 +241,32 @@ def student_dashboard(request):
         data["effective_total"] = effective_total
         data["percentage"] = percentage
         data["eligible"] = eligible
-
+        
+        # Sort monthly data and calculate monthly percentage
+        sorted_monthly = []
+        for month_key, m_data in sorted(data["monthly"].items()):
+            m_total = m_data["total"]
+            m_present = m_data["present"]
+            # Apply 30-class cap per month as well? 
+            # The objective says "Cumulative Attendance taken each month". 
+            # It also says "More than 30 classes are considered as 30".
+            # Usually this cap applies to the semester/cumulative, but let's show it for monthly too if it ever exceeds.
+            m_effective = min(m_total, 30)
+            m_percentage = round((m_present / m_effective * 100), 2) if m_effective > 0 else 0
+            
+            year, month = map(int, month_key.split("-"))
+            month_name = calendar.month_name[month]
+            
+            sorted_monthly.append({
+                "month_key": month_key,
+                "month_name": month_name,
+                "total": m_total,
+                "present": m_present,
+                "percentage": m_percentage,
+                "eligible": m_percentage >= 75
+            })
+        
+        data["monthly_list"] = sorted_monthly
         final_report.append(data)
 
         overall_present += present
@@ -238,3 +286,4 @@ def student_dashboard(request):
     }
 
     return render(request, "attendance/student_dashboard.html", context)
+
